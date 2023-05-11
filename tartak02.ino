@@ -1,6 +1,10 @@
 #include <LiquidCrystal_I2C.h>
 #include "DFRobot_GP8403.h"
 #include "EmonLib.h"
+#include <WiFi.h>
+
+const char* ssid = "jasio";
+const char* password = "Polinezyjska7/6";
 
 EnergyMonitor emon1;
 EnergyMonitor emon2;
@@ -20,8 +24,26 @@ int currentState5;
 int currentState14;
 
 int EIGHT = 8000;
+
+
+void initWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi ..");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print('.');
+    delay(1000);
+  }
+
+}
+
+
 void setup()
 {
+
+//  initWiFi();
+//  Serial.print("RRSI: ");
+//  Serial.println(WiFi.RSSI());
 
   lcd.init();
   lcd.backlight();
@@ -46,6 +68,7 @@ void setup()
   dac.setDACOutVoltage(VOLTS,0);//The DAC value for 3.5V output in OUT0 channel
   delay(1000);
   dac.store(); //Save the set 3.5V voltage inside the chip
+
    
 }
 
@@ -56,7 +79,9 @@ void loop()
   currentState5 = digitalRead(BUTTON_PIN5);
   currentState14 = digitalRead(BUTTON_PIN14);
 
-
+//  Serial.print("RRSI: ");
+//  Serial.println(WiFi.RSSI());
+//  Serial.println(WiFi.localIP());
 
   if(currentState5 == LOW) {
     Serial.println("PRESSED 5");
@@ -112,6 +137,8 @@ double Irms2 = emon2.calcIrms(3333);  // Calculate Irms only
   lcd.print("POSUW");
   lcd.setCursor(8, 1);
   lcd.print(VOLTS/100);
+  lcd.setCursor(11, 1);
+  lcd.print("%");
 
 
   // save the last state
