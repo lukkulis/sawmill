@@ -19,6 +19,7 @@ int VOLTS;
 #define BUTTON_PIN15 15
 #define BUTTON_PIN5 5
 #define BUTTON_PIN14 14
+#define RELAY 32
 
 int lastState = HIGH;
 int currentState15;
@@ -26,7 +27,6 @@ int currentState5;
 int currentState14;
 
 int EIGHT = 8000;
-
 
 void initWiFi() {
   WiFi.mode(WIFI_STA);
@@ -39,10 +39,9 @@ void initWiFi() {
 
 }
 
-
 void setup()
 {
-
+  pinMode(RELAY,OUTPUT);
   initWiFi();
 
 //  lcd.init();
@@ -60,7 +59,8 @@ void setup()
   delay(1000);
 
   pinMode(BUTTON_PIN15, INPUT_PULLUP);
-  pinMode(BUTTON_PIN5, INPUT_PULLUP);
+
+  pinMode(BUTTON_PIN5, OUTPUT);
   pinMode(BUTTON_PIN14, INPUT_PULLUP);
   
    }
@@ -71,7 +71,6 @@ void setup()
   delay(1000);
   dac.store(); //Save the set 3.5V voltage inside the chip
 
-   
 }
 
 void loop()
@@ -90,13 +89,7 @@ void loop()
     VOLTS = 4000;
     Serial.println(VOLTS);
     dac.setDACOutVoltage(VOLTS,0);
-  }
-
-  else if (currentState15 == LOW) {
-    Serial.println("PRESSED 15");
-    VOLTS = 6000;
-    Serial.println(VOLTS);
-    dac.setDACOutVoltage(VOLTS,0);
+    digitalWrite(RELAY, HIGH);
   }
 
   else if (currentState14 == LOW) {
@@ -111,10 +104,9 @@ void loop()
     VOLTS = 2000;
     Serial.println(VOLTS);
     dac.setDACOutVoltage(VOLTS,0);
+    digitalWrite(RELAY, LOW);
   }
 
-
-  
 double Irms1 = emon1.calcIrms(3333);  // Calculate Irms only
 double Irms2 = emon2.calcIrms(3333);  // Calculate Irms only
 double Irms3 = emon3.calcIrms(3333);  // Calculate Irms only
