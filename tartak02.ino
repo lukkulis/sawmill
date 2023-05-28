@@ -89,7 +89,7 @@ void loop()
     VOLTS = 4000;
     Serial.println(VOLTS);
     dac.setDACOutVoltage(VOLTS,0);
-    digitalWrite(RELAY, HIGH);
+    digitalWrite(RELAY, LOW);
   }
 
   else if (currentState14 == LOW) {
@@ -104,7 +104,7 @@ void loop()
     VOLTS = 2000;
     Serial.println(VOLTS);
     dac.setDACOutVoltage(VOLTS,0);
-    digitalWrite(RELAY, LOW);
+    digitalWrite(RELAY, HIGH);
   }
 
 double Irms1 = emon1.calcIrms(3333);  // Calculate Irms only
