@@ -1,10 +1,14 @@
-//  #include <LiquidCrystal_I2C.h>
+
 #include "DFRobot_GP8403.h"
 #include "EmonLib.h"
 #include <WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <HTTPClient.h>
+#include "SDL_Arduino_INA3221.h"
+
+SDL_Arduino_INA3221 ina3221;
+
 HTTPClient https;
 const char* ssid = "tartak01";
 const char* password = "tartak01";
@@ -24,15 +28,23 @@ EnergyMonitor emon2;
 EnergyMonitor emon3;
 EnergyMonitor emon4;
 
+
 //  LiquidCrystal_I2C lcd(0x27, 16, 2);
 DFRobot_GP8403 dac(&Wire,0x5F);
 
 int VOLTS;
+ 
+ float shuntvoltage1;
+ float busvoltage1;
+ float current_mA1;
+ float loadvoltage1;
 
 #define BUTTON_PIN15 15
 #define BUTTON_PIN5 5
 #define BUTTON_PIN14 14
 #define RELAY 32
+
+#define VOLTAGE_CHANNEL_1 1
 
 int lastState = HIGH;
 int currentState15;
@@ -84,6 +96,7 @@ void setup()
   emon3.current(34, 7.1);             // Current: input pin, calibration.
   emon4.current(35, 7.1);             // Current: input pin, calibration.
 
+
   while(dac.begin()!=0){
   Serial.println("init error");
   delay(1000);
@@ -92,6 +105,8 @@ void setup()
 
   pinMode(BUTTON_PIN5, OUTPUT);
   pinMode(BUTTON_PIN14, INPUT_PULLUP);
+
+
   
    }
 
@@ -103,6 +118,13 @@ void setup()
 
   timeClient.begin();
   https.setReuse(true);
+
+  ina3221.begin();
+//  Serial.print("Manufactures ID=0x");
+  int MID;
+  MID = ina3221.getManufID();
+  Serial.println(MID,HEX);
+
 }
 
 void loop()
@@ -118,66 +140,28 @@ void loop()
   Serial.println(WiFi.localIP());
 
   if(currentState5 == LOW) {
-    //Serial.println("PRESSED 5");
-    //VOLTS = 4000;
-    //Serial.println(VOLTS);
-    //dac.setDACOutVoltage(VOLTS,0);
-    //digitalWrite(RELAY, LOW);
+
   }
 
   else if (currentState14 == LOW) {
-    //Serial.println("PRESSED 14");
-    //VOLTS = 8000;
-    //Serial.println(VOLTS);
-    //dac.setDACOutVoltage(VOLTS,0);
+
   }
   
   else {
-    // Serial.println("NOT PRESSED");
-    //VOLTS = 2000;
-    // Serial.println(VOLTS);
-    //dac.setDACOutVoltage(VOLTS,0);
-    //digitalWrite(RELAY, HIGH);
+
   }
+
 
 float Irms1 = emon1.calcIrms(268);  // Calculate Irms only
 float Irms2 = emon2.calcIrms(268);  // Calculate Irms only
 float Irms3 = emon3.calcIrms(268);  // Calculate Irms only
 float Irms4 = emon4.calcIrms(268);  // Calculate Irms only
-//  Serial.print("WATTS1: ");
-//  Serial.print(Irms1*230.0);         // Apparent power
 
-//  Serial.print(" AMPS1: ");
-//  Serial.println(Irms1);          // Irms
-  
-//  Serial.print("WATTS2: ");
-//  Serial.print(Irms2*230.0);         // Apparent power
-//  Serial.print(" AMPS2: ");
-//  Serial.println(Irms2);          // Irms
-
-//  Serial.print(" AMPS3: ");
-//  Serial.println(Irms3);          // Irms
-
-//  Serial.print(" AMPS4: ");
-//  Serial.println(Irms4);          // Irms
+     
 
 
 
-  // save the last state
-//  lastState = currentState;
 
-    // read the state of the switch/button:
-//  int buttonState = digitalRead(BUTTON_PIN);
-
-  // print out the button's state
-//  Serial.println(buttonState);
-
-
-// timeClient.update(); 
-// Serial.print(timeClient.getFormattedTime());
-// Serial.print('\n'); 
-
-//delay(10);
 
 currentMillis = millis();
   if(currentMillis > 5000) {
@@ -237,7 +221,7 @@ if (counter==20) {
     digitalWrite(RELAY, HIGH);
   }
   
-    String urlFinal = "https://script.google.com/macros/s/"+GOOGLE_SCRIPT_ID+"/exec?"+"Status=" + String(TRYB) + "&" + "Faza1=" + int(adjusted_sample1) + "&" + "Faza2=" + int(adjusted_sample2) + "&" + "Faza3=" + int(adjusted_sample3) + "&" + "Faza4=" + int(adjusted_sample4) + "&" + "Posuw=" + String(VOLTS/1000);
+    String urlFinal = "https://script.google.com/macros/s/"+GOOGLE_SCRIPT_ID+"/exec?"+"Status=" + String(TRYB) + "&" + "Faza1=" + int(adjusted_sample1) + "&" + "Faza2=" + int(adjusted_sample2) + "&" + "Faza3=" + int(adjusted_sample3) + "&" + "Faza4=" + int(adjusted_sample4) + "&" + "Posuw=" + int(busvoltage1);
     Serial.print("POST data to spreadsheet:");
     Serial.println(urlFinal);
 //    HTTPClient http;
@@ -261,42 +245,31 @@ if (counter==20) {
        previousMillis = currentMillis;
 Serial.print("COUNTER: ");
  Serial.print(counter);
-// Serial.print ('\n');
-// Serial.print("AMPS 1: ");
-// Serial.print(Irms1);
-// Serial.print ('\n');
-// Serial.print("AMPS 2: ");
-// Serial.print(Irms2);
-// Serial.print ('\n');
-// Serial.print("AMPS 3: ");
-// Serial.print(Irms3);
-// Serial.print ('\n');
-// Serial.print("AMPS 4: ");
-// Serial.print(Irms4);
+
  Serial.print ('\n');
 
-// Serial.print("SUM OF PROBES 1: ");
-// Serial.print (total1);
-// Serial.print ('\n');
-// Serial.print("SUM OF PROBES 2: ");
-// Serial.print (total2);
-// Serial.print ('\n');
-// Serial.print("SUM OF PROBES 3: ");
-// Serial.print (total3); 
-// Serial.print ('\n');
-// Serial.print("SUM OF PROBES 4: ");
-// Serial.print (total4);
+
  Serial.print ('\n');
  
-// Serial.print("AVERAGE 1: ");
-// Serial.println (adjusted_sample1);
-// Serial.print("AVERAGE 2: ");
-// Serial.println (adjusted_sample2);
-// Serial.print("AVERAGE 3: ");
-// Serial.println (adjusted_sample3);
-// Serial.print("AVERAGE 4: ");
-// Serial.println (adjusted_sample4);
+
+
+  Serial.println("------------------------------");
+ 
+
+  busvoltage1 = ina3221.getBusVoltage_V(VOLTAGE_CHANNEL_1);
+  shuntvoltage1 = ina3221.getShuntVoltage_mV(VOLTAGE_CHANNEL_1);
+  current_mA1 = ina3221.getCurrent_mA(VOLTAGE_CHANNEL_1);  
+  loadvoltage1 = busvoltage1 + (shuntvoltage1 / 1000);
+
+  Serial.print("Bus Voltage:   "); Serial.print(busvoltage1); Serial.println(" V");
+  Serial.print("Shunt Voltage: "); Serial.print(shuntvoltage1); Serial.println(" mV");
+  Serial.print("Load Voltage:  "); Serial.print(loadvoltage1); Serial.println(" V");
+  Serial.print("Current:       "); Serial.print(current_mA1); Serial.println(" mA");
+  Serial.println("");
 
   }
+
+
+ 
 
 }
